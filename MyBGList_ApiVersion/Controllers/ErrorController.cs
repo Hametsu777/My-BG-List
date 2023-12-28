@@ -7,13 +7,13 @@ namespace MyBGList.Controllers
     [ApiController]
     public class ErrorController : ControllerBase
     {
-        [HttpGet("/errorx")]
+        [HttpGet("/error")]
         public IActionResult Error()
         {
             return Problem();
         }
 
-        [HttpGet("/errorx/test")]
+        [HttpGet("/error/test")]
         public IActionResult Test()
         {
             throw new Exception("test");

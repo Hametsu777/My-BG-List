@@ -4,11 +4,14 @@ using MyBGList.Dtos;
 using MyBGList.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
+using MyBGList.Dtos.v2;
+using Asp.Versioning;
 
-namespace MyBGList.Controllers
+namespace MyBGList.Controllers.v2
 {
-    [Route("api/[controller]")]
+    [Route("/v{version:ApiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("2.0")]
     public class BoardGamesController : ControllerBase
     {
         // Trying to make a List but may have to change back to an array.
@@ -59,7 +62,7 @@ namespace MyBGList.Controllers
         {
             return new RestDto<List<BoardGame>>()
             {
-                Data = new List<BoardGame>()
+                Items = new List<BoardGame>()
                 {
                     new BoardGame() {
                         Id = 1,
@@ -86,9 +89,9 @@ namespace MyBGList.Controllers
 
                     }
                 },
-                Links = new List<LinkDto>
+                Links = new List<Dtos.v1.LinkDto>
                 {
-                    new LinkDto(Url.Action(null, "BoardGames", null, Request.Scheme)!, "self", "GET"),
+                    new Dtos.v1.LinkDto(Url.Action(null, "BoardGames", null, Request.Scheme)!, "self", "GET"),
                 }
 
             };

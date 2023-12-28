@@ -4,11 +4,14 @@ using MyBGList.Dtos;
 using MyBGList.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
+using MyBGList.Dtos.v1;
+using Asp.Versioning;
 
-namespace MyBGList.Controllers
+namespace MyBGList.Controllers.v1
 {
-    [Route("api/[controller]")]
+    [Route("/v{version:ApiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class BoardGamesController : ControllerBase
     {
         // Trying to make a List but may have to change back to an array.
