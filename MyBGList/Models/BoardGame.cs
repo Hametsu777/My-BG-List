@@ -39,5 +39,8 @@ namespace MyBGList.Models
         public DateTime CreatedDate { get; set; }
         [Required]
         public DateTime LastModifiedDate { get; set; }
+        // Navigation properties. References to entites handled by junction.
+        public ICollection<BoardGames_Domains>? BoardGames_Domains { get; set; }
+        public ICollection<BoardGames_Mechanics>? BoardGames_Mechanics { get; set; }
     }
 }
