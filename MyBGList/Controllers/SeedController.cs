@@ -132,6 +132,18 @@ namespace MyBGList.Controllers
                 }
             }
 
+            // SAVE
+            await _context.SaveChangesAsync();
+
+            // RECAP
+            return new JsonResult(new
+            {
+                Boardgames = _context.BoardGames.Count(),
+                Domains = _context.Domains.Count(),
+                Mechanics = _context.Mechanics.Count(),
+                SkippedRows = skippedRows
+            });
+
 
         }
     }
