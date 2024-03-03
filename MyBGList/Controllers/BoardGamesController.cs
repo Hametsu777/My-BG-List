@@ -6,6 +6,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
 using MyBGList.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 
 namespace MyBGList.Controllers
 {
@@ -57,18 +58,25 @@ namespace MyBGList.Controllers
         // Name property is used for Url Generation (based on a specific route) and is not the same as routing.
         // [HttpGet("/someName")] is not the same as [HttpGet( Name = "someName")].
         // Research more about Cache and look up rules, methods, etc, available.
+        // Need to add data validation and error handling
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames()
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, int pageSize = 10, string? sortColumn = "Name", string? sortOrder = "ASC")
         {
-            var query = _context.BoardGames;
+            var query = _context.BoardGames
+                .OrderBy($"{sortColumn} {sortOrder}")
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize);
 
             return new RestDto<List<BoardGame>>()
             {
                 Data = await query.ToListAsync(),
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                RecordCount = await _context.BoardGames.CountAsync(),
                 Links = new List<LinkDto>
                 {
-                    new LinkDto(Url.Action(null, "BoardGames", null, Request.Scheme)!, "self", "GET"),
+                    new LinkDto(Url.Action(null, "BoardGames", new {pageIndex, pageSize}, Request.Scheme)!, "self", "GET"),
                 }
 
 
