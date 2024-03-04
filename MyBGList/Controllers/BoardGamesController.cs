@@ -59,11 +59,21 @@ namespace MyBGList.Controllers
         // [HttpGet("/someName")] is not the same as [HttpGet( Name = "someName")].
         // Research more about Cache and look up rules, methods, etc, available.
         // Need to add data validation and error handling
+        // Look up more about AsQueryable method.
+        // Var query line handles the dbSet as an IQueryable object. Did this to be able to chain the extension methods.
+        // Var recordCount line line determines the record count. Did this to pull the record count from the database sooner ...
+        // so the filter paramet could be taken into account before performing the paging tasks.
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, int pageSize = 10, string? sortColumn = "Name", string? sortOrder = "ASC")
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, int pageSize = 10, string? sortColumn = "Name", string? sortOrder = "ASC", string? filterQuery = null)
         {
-            var query = _context.BoardGames
+            var query = _context.BoardGames.AsQueryable();
+            if (!string.IsNullOrEmpty(filterQuery))
+            {
+                query = query.Where(b => b.Name.Contains(filterQuery));
+            };
+            var recordCount = await query.CountAsync();
+            query = query
                 .OrderBy($"{sortColumn} {sortOrder}")
                 .Skip(pageIndex * pageSize)
                 .Take(pageSize);
@@ -73,13 +83,47 @@ namespace MyBGList.Controllers
                 Data = await query.ToListAsync(),
                 PageIndex = pageIndex,
                 PageSize = pageSize,
-                RecordCount = await _context.BoardGames.CountAsync(),
+                RecordCount = recordCount,
                 Links = new List<LinkDto>
                 {
                     new LinkDto(Url.Action(null, "BoardGames", new {pageIndex, pageSize}, Request.Scheme)!, "self", "GET"),
                 }
 
 
+            };
+        }
+
+        // Research Update vs Add.
+        [HttpPost("/UpdateBoardGame")]
+        [ResponseCache(NoStore = true)]
+        public async Task<RestDto<BoardGame?>> UpdateBoardGame(BoardGameDto model)
+        {
+            var boardGame = await _context.BoardGames
+                .Where(b => b.Id == model.Id)
+                .FirstOrDefaultAsync();
+            if (boardGame != null)
+            {
+                if (!string.IsNullOrEmpty(model.Name))
+                {
+                    boardGame.Name = model.Name;
+                }
+                if (model.Year.HasValue && model.Year.Value > 0)
+                {
+                    boardGame.Year = model.Year.Value;
+                }
+
+                boardGame.LastModifiedDate = DateTime.UtcNow;
+                _context.BoardGames.Update(boardGame);
+                await _context.SaveChangesAsync();
+            }
+
+            return new RestDto<BoardGame?>()
+            {
+                Data = boardGame,
+                Links = new List<LinkDto>
+                {
+                    new LinkDto(Url.Action(null, "BoardGames", model, Request.Scheme)!, "self", "POST"),
+                }
             };
         }
 
