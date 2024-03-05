@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using MyBGList.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
+using System.ComponentModel.DataAnnotations;
 
 namespace MyBGList.Controllers
 {
@@ -65,7 +66,7 @@ namespace MyBGList.Controllers
         // so the filter paramet could be taken into account before performing the paging tasks.
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, int pageSize = 10, string? sortColumn = "Name", string? sortOrder = "ASC", string? filterQuery = null)
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, string? sortColumn = "Name", [RegularExpression("ASC|DESC")] string? sortOrder = "ASC", string? filterQuery = null)
         {
             var query = _context.BoardGames.AsQueryable();
             if (!string.IsNullOrEmpty(filterQuery))
@@ -123,6 +124,29 @@ namespace MyBGList.Controllers
                 Links = new List<LinkDto>
                 {
                     new LinkDto(Url.Action(null, "BoardGames", model, Request.Scheme)!, "self", "POST"),
+                }
+            };
+        }
+
+        [HttpDelete("/DeleteBoardGame")]
+        [ResponseCache(NoStore = true)]
+        public async Task<RestDto<BoardGame?>> DeleteBoardGame(int id)
+        {
+            var boardGame = await _context.BoardGames
+                .Where(b => b.Id == id)
+                .FirstOrDefaultAsync();
+            if (boardGame != null)
+            {
+                _context.BoardGames.Remove(boardGame);
+                await _context.SaveChangesAsync();
+            }
+
+            return new RestDto<BoardGame?>()
+            {
+                Data = boardGame,
+                Links = new List<LinkDto>
+                {
+                    new LinkDto(Url.Action(null, "BoardGames", id, Request.Scheme)!, "Self", "DELETE")
                 }
             };
         }
