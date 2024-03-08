@@ -6,5 +6,17 @@ namespace MyBGList.Attributes
     {
         public string[] AllowedValues { get; set; } = new[] { "ASC", "DESC" };
         public SortOrderValidatorAttribute() : base("Value must be one of the following: {0}.") { }
+
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+        {
+            // Come back and research as keyword. Have an idea of what it does but need to confirm.
+            var strValue = value as string;
+            if (!string.IsNullOrEmpty(strValue) && AllowedValues.Contains(strValue))
+            {
+                return ValidationResult.Success;
+            }
+
+            return new ValidationResult(FormatErrorMessage(string.Join(",", AllowedValues)));
+        }
     }
 }

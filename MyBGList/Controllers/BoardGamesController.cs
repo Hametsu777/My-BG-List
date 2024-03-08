@@ -8,6 +8,7 @@ using MyBGList.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 using System.ComponentModel.DataAnnotations;
+using MyBGList.Attributes;
 
 namespace MyBGList.Controllers
 {
@@ -64,9 +65,10 @@ namespace MyBGList.Controllers
         // Var query line handles the dbSet as an IQueryable object. Did this to be able to chain the extension methods.
         // Var recordCount line line determines the record count. Did this to pull the record count from the database sooner ...
         // so the filter paramet could be taken into account before performing the paging tasks.
+        // SortOrder Validator is a custom validator.
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, string? sortColumn = "Name", [RegularExpression("ASC|DESC")] string? sortOrder = "ASC", string? filterQuery = null)
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, [SortColumnValidator(typeof(BoardGameDto))] string? sortColumn = "Name", [SortOrderValidator] string? sortOrder = "ASC", string? filterQuery = null)
         {
             var query = _context.BoardGames.AsQueryable();
             if (!string.IsNullOrEmpty(filterQuery))
