@@ -66,30 +66,32 @@ namespace MyBGList.Controllers
         // Var recordCount line line determines the record count. Did this to pull the record count from the database sooner ...
         // so the filter paramet could be taken into account before performing the paging tasks.
         // SortOrder Validator is a custom validator.
+        // For the GetBoardGames method, the code below is before using RequestDto class to replace the simple type parameters.
+        //  public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, [SortColumnValidator(typeof(BoardGameDto))] string? sortColumn = "Name", [SortOrderValidator] string? sortOrder = "ASC", string? filterQuery = null)
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, [SortColumnValidator(typeof(BoardGameDto))] string? sortColumn = "Name", [SortOrderValidator] string? sortOrder = "ASC", string? filterQuery = null)
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames([FromQuery] RequestDto input)
         {
             var query = _context.BoardGames.AsQueryable();
-            if (!string.IsNullOrEmpty(filterQuery))
+            if (!string.IsNullOrEmpty(input.FilterQuery))
             {
-                query = query.Where(b => b.Name.Contains(filterQuery));
+                query = query.Where(b => b.Name.Contains(input.FilterQuery));
             };
             var recordCount = await query.CountAsync();
             query = query
-                .OrderBy($"{sortColumn} {sortOrder}")
-                .Skip(pageIndex * pageSize)
-                .Take(pageSize);
+                .OrderBy($"{input.SortColumn} {input.SortOrder}")
+                .Skip(input.PageIndex * input.PageSize)
+                .Take(input.PageSize);
 
             return new RestDto<List<BoardGame>>()
             {
                 Data = await query.ToListAsync(),
-                PageIndex = pageIndex,
-                PageSize = pageSize,
+                PageIndex = input.PageIndex,
+                PageSize = input.PageSize,
                 RecordCount = recordCount,
                 Links = new List<LinkDto>
                 {
-                    new LinkDto(Url.Action(null, "BoardGames", new {pageIndex, pageSize}, Request.Scheme)!, "self", "GET"),
+                    new LinkDto(Url.Action(null, "BoardGames", new {input.PageIndex, input.PageSize}, Request.Scheme)!, "self", "GET"),
                 }
 
 
