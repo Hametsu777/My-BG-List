@@ -14,10 +14,16 @@ namespace MyBGList.Swagger
         // all parameters decorated with our custom validation attributes and adds relevant info to the swagger.json file for
         // each of them.
         // The var attributes block checks whether the parameter has the attribute.
+        // See 393 for Union code.
         public void Apply(OpenApiParameter parameter, ParameterFilterContext context)
         {
             var attributes = context.ParameterInfo?
                 .GetCustomAttributes(true)
+                .Union(
+                    context.ParameterInfo.ParameterType.GetProperties()
+                    .Where(p => p.Name == parameter.Name)
+                    .SelectMany(p => p.GetCustomAttributes(true))
+                    )
                 .OfType<SortOrderValidatorAttribute>();
 
             if (attributes != null)

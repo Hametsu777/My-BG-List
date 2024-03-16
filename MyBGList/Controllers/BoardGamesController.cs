@@ -68,9 +68,11 @@ namespace MyBGList.Controllers
         // SortOrder Validator is a custom validator.
         // For the GetBoardGames method, the code below is before using RequestDto class to replace the simple type parameters.
         //  public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, [SortColumnValidator(typeof(BoardGameDto))] string? sortColumn = "Name", [SortOrderValidator] string? sortOrder = "ASC", string? filterQuery = null)
+        // [FromQuery] attribute tells the routing middleware that we want to get the input values from the query string. Used [FromQuery] ...
+        // because the default method for complex - type parameters is to get values from the request body.
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-        public async Task<RestDto<List<BoardGame>>> GetBoardGames([FromQuery] RequestDto input)
+        public async Task<RestDto<List<BoardGame>>> GetBoardGames([FromQuery] RequestDto<BoardGameDto> input)
         {
             var query = _context.BoardGames.AsQueryable();
             if (!string.IsNullOrEmpty(input.FilterQuery))
