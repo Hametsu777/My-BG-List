@@ -12,7 +12,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<DataContext>(options =>
 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddControllers();
+// Customizing model binding errors.
+builder.Services.AddControllers(options =>
+{
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(x => $"The value '{x}' is invalid.");
+    options.ModelBindingMessageProvider.SetValueMustBeANumberAccessor(x => $"The field {x} must be a number.");
+    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((x, y) => $"The value '{x}' is not valid for {y}.");
+    options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(() => $"A value is required.");
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -36,6 +43,12 @@ builder.Services.AddCors(options =>
             cfg.AllowAnyMethod();
         });
 });
+
+// Disables the automatic ModelState Validation feature. This setting suppresses the filter that automatically
+// returns a BadRequestObjectResult when the ModelState is invalid. (This let's us check the ModelValidation manually).
+// Don't use this method. Action methods were still executed even if parameters were invalid.
+//builder.Services.Configure<ApiBehaviorOptions>(options =>
+//options.SuppressModelStateInvalidFilter = true);
 
 var app = builder.Build();
 
