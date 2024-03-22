@@ -17,7 +17,6 @@ namespace MyBGList.Attributes
                     break;
                 }
             }
-            throw new NotImplementedException();
         }
     }
 }
