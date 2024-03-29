@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 using System.ComponentModel.DataAnnotations;
 using MyBGList.Attributes;
+using MyBGList.Constants;
 
 namespace MyBGList.Controllers
 {
@@ -70,10 +71,12 @@ namespace MyBGList.Controllers
         //  public async Task<RestDto<List<BoardGame>>> GetBoardGames(int pageIndex = 0, [Range(1, 100)] int pageSize = 10, [SortColumnValidator(typeof(BoardGameDto))] string? sortColumn = "Name", [SortOrderValidator] string? sortOrder = "ASC", string? filterQuery = null)
         // [FromQuery] attribute tells the routing middleware that we want to get the input values from the query string. Used [FromQuery] ...
         // because the default method for complex - type parameters is to get values from the request body.
+        // For LogInformation, first parameter is event ID.
         [HttpGet("/GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
         public async Task<RestDto<List<BoardGame>>> GetBoardGames([FromQuery] RequestDto<BoardGameDto> input)
         {
+            _logger.LogInformation(CustomLogEvents.BoardGamesController_Get, "Get method started");
             var query = _context.BoardGames.AsQueryable();
             if (!string.IsNullOrEmpty(input.FilterQuery))
             {

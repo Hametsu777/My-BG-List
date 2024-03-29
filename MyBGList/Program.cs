@@ -4,11 +4,17 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using MyBGList.Constants;
 using MyBGList.Data;
 using MyBGList.Swagger;
 using System.Reflection.Metadata.Ecma335;
 
 var builder = WebApplication.CreateBuilder(args);
+// Removes all registered logging providers, adds the console logging provider, adds the debug logging provider.
+builder.Logging
+    .ClearProviders()
+    .AddSimpleConsole()
+    .AddDebug();
 
 // Add services to the container.
 builder.Services.AddDbContext<DataContext>(options =>
@@ -110,6 +116,8 @@ app.MapGet("/error",
     details.Extensions["traceId"] = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier;
     details.Type = "https://tools.ieft.org/html/rfc7231#section-6.6.1";
     details.Status = StatusCodes.Status500InternalServerError;
+
+    app.Logger.LogError(CustomLogEvents.Error_Get, exceptionHandler?.Error, "An unhandled exception occured.");
     return Results.Problem(details);
 });
 
