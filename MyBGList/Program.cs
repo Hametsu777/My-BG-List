@@ -7,14 +7,35 @@ using Microsoft.OpenApi.Models;
 using MyBGList.Constants;
 using MyBGList.Data;
 using MyBGList.Swagger;
+using NpgsqlTypes;
+using Serilog;
+using Serilog.Sinks.PostgreSQL;
 using System.Reflection.Metadata.Ecma335;
 
 var builder = WebApplication.CreateBuilder(args);
 // Removes all registered logging providers, adds the console logging provider, adds the debug logging provider.
+// The AddApplicationInsights line activates the Application Insights logging provider for MyBGList web API.
 builder.Logging
     .ClearProviders()
     .AddSimpleConsole()
-    .AddDebug();
+    .AddDebug()
+    .AddApplicationInsights(telemetry => telemetry.ConnectionString = builder
+    .Configuration["Azure:ApplicationInsights:ConnectionString"], loggerOptions => { });
+
+
+// Figure out how to configure serilog for postgresql. Have to use Serilog.sinks.postgres.alternative. The regular version is no longer
+// maintained.
+//builder.Host.UseSerilog((ctx, lc) =>
+//{
+//    lc.ReadFrom.Configuration(ctx.Configuration);
+//    lc.WriteTo.PostgreSQL(connectionString: ctx.Configuration.GetConnectionString("DefaultConnection"), sinkOptions: new PostgreSQLSink
+//    {
+
+//    });
+//});
+
+
+
 
 // Add services to the container.
 builder.Services.AddDbContext<DataContext>(options =>
@@ -50,6 +71,24 @@ builder.Services.AddCors(options =>
             cfg.AllowAnyMethod();
         });
 });
+
+string tableName = "logs";
+
+IDictionary<string, ColumnWriterBase> columnOptions = new Dictionary<string, ColumnWriterBase>
+{
+    {"message", new RenderedMessageColumnWriter(NpgsqlDbType.Text) },
+    {"message_template", new MessageTemplateColumnWriter(NpgsqlDbType.Text) },
+    {"level", new LevelColumnWriter(true, NpgsqlDbType.Varchar) },
+    { "raise_date", new TimestampColumnWriter(NpgsqlDbType.TimestampTz) },
+    { "exception", new ExceptionColumnWriter(NpgsqlDbType.Text) },
+    { "properties", new LogEventSerializedColumnWriter(NpgsqlDbType.Jsonb) },
+    { "props_test", new PropertiesColumnWriter(NpgsqlDbType.Jsonb) },
+    { "machine_name", new SinglePropertyColumnWriter("MachineName", PropertyWriteMethod.ToString, NpgsqlDbType.Text, "1") }
+};
+
+var logger = new LoggerConfiguration()
+    .WriteTo.PostgreSQL(connectionString, tableName, columnOptions, needAutoCreateTable: true, schemaName: "LoggingSchema")
+    .CreateLogger();
 
 // Disables the automatic ModelState Validation feature. This setting suppresses the filter that automatically
 // returns a BadRequestObjectResult when the ModelState is invalid. (This let's us check the ModelValidation manually).
