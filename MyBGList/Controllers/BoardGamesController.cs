@@ -73,7 +73,7 @@ namespace MyBGList.Controllers
         // because the default method for complex - type parameters is to get values from the request body.
         // For LogInformation, first parameter is event ID.
         [HttpGet("/GetBoardGames")]
-        [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
+        [ResponseCache(CacheProfileName = "Any-60")]
         public async Task<RestDto<List<BoardGame>>> GetBoardGames([FromQuery] RequestDto<BoardGameDto> input)
         {
             _logger.LogInformation(CustomLogEvents.BoardGamesController_Get, "Get method started");

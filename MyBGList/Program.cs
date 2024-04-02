@@ -47,6 +47,8 @@ builder.Services.AddControllers(options =>
     options.ModelBindingMessageProvider.SetValueMustBeANumberAccessor(x => $"The field {x} must be a number.");
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((x, y) => $"The value '{x}' is not valid for {y}.");
     options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(() => $"A value is required.");
+    options.CacheProfiles.Add("NoCache", new CacheProfile() { NoStore = true });
+    options.CacheProfiles.Add("Any-60", new CacheProfile { Location = ResponseCacheLocation.Any, Duration = 60 });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -86,9 +88,9 @@ IDictionary<string, ColumnWriterBase> columnOptions = new Dictionary<string, Col
     { "machine_name", new SinglePropertyColumnWriter("MachineName", PropertyWriteMethod.ToString, NpgsqlDbType.Text, "1") }
 };
 
-var logger = new LoggerConfiguration()
-    .WriteTo.PostgreSQL(connectionString, tableName, columnOptions, needAutoCreateTable: true, schemaName: "LoggingSchema")
-    .CreateLogger();
+//var logger = new LoggerConfiguration()
+//    .WriteTo.PostgreSQL(connectionString, tableName, columnOptions, needAutoCreateTable: true, schemaName: "LoggingSchema")
+//    .CreateLogger();
 
 // Disables the automatic ModelState Validation feature. This setting suppresses the filter that automatically
 // returns a BadRequestObjectResult when the ModelState is invalid. (This let's us check the ModelValidation manually).
@@ -139,6 +141,16 @@ app.UseCors("AnyOrigin");
 
 app.UseAuthorization();
 
+app.Use((context, next) =>
+{
+    context.Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+    {
+        NoCache = true,
+        NoStore = true,
+    };
+    return next.Invoke();
+});
+
 // Applying AnyOrigin Policy to minimal API Routes. Could be applied to Map Controllers but then it would be applied globally to controllers.
 // Try not to use endpoint routing but the [EnableCors] atrribute instead. Need to study details/ProblemDetails object.
 app.MapGet("/error",
@@ -174,6 +186,14 @@ $"Server time(UTC): {DateTime.UtcNow.ToString("o")}" + "\\r\\n" +
 "Client time(UTC): ' + new Date().toISOString());" +
 "</script>" +
 "<noscript>Your client does not support JavaScript</noscript>", "text/html"));
+
+app.MapGet("/cache/test/1",
+    [EnableCors("AnyOrigin")]
+(HttpContext context) =>
+    {
+        context.Response.Headers["cache-control"] = "no-cache, no-store";
+        return Results.Ok();
+    });
 
 app.MapControllers();
 
